@@ -140,10 +140,6 @@
       min-height: 180px;
       resize: vertical;
     }
-
-    a {
-      color: #c4b5fd;
-    }
   </style>
 </head>
 
@@ -191,8 +187,7 @@
 
         <div>
           <div class="k">Comanda (editável)</div>
-          <textarea id="comandaText" placeholder="Depois que processar, o texto vai aparecer aqui..."
-            disabled></textarea>
+          <textarea id="comandaText" placeholder="Depois que processar, o texto vai aparecer aqui..." disabled></textarea>
           <div class="row" style="margin-top:10px;">
             <button class="btn ok" id="btnConfirmar" disabled>✅ Confirmar pedido</button>
             <button class="btn ghost" id="btnRefazer" disabled>🔁 Refazer</button>
@@ -204,14 +199,9 @@
   </div>
 
   <script>
-    const DEFAULT_API = "https://alfred-api-27ade05d8916.herokuapp.com";
-    const LS_API_KEY = "ALFRED_API_BASE";
+    const API_BASE = "https://alfred-api-27ade05d8916.herokuapp.com";
 
     const el = (id) => document.getElementById(id);
-
-    const apiBaseLbl = el("apiBase");
-    const apiInput = el("apiInput");
-    const btnSalvarApi = el("btnSalvarApi");
 
     const mesaLbl = el("mesaLbl");
     const statusPill = el("statusPill");
@@ -227,7 +217,6 @@
     const btnRefazer = el("btnRefazer");
     const confirmMsg = el("confirmMsg");
 
-    let API_BASE = (localStorage.getItem(LS_API_KEY) || DEFAULT_API).trim();
     let mesaId = new URLSearchParams(location.search).get("mesa") || "—";
 
     let mediaRecorder = null;
@@ -238,14 +227,6 @@
     let jobResult = null;
     let sse = null;
     let pollingTimer = null;
-
-    function setApiBase(url) {
-      API_BASE = (url || "").trim().replace(/\/+$/, "");
-      if (!API_BASE) API_BASE = DEFAULT_API;
-      localStorage.setItem(LS_API_KEY, API_BASE);
-      apiBaseLbl.textContent = API_BASE;
-      apiInput.value = API_BASE;
-    }
 
     function setStatus(text) {
       statusPill.textContent = text;
@@ -284,7 +265,7 @@
         }
       } else {
         lines.push("Itens:");
-        lines.push("- (nenhum item identificado, edite manualmente)");
+        lines.push("- (nenhum item identificado, chame um garçom)");
       }
 
       const transcript = (resultObj?.transcript || "").trim();
@@ -351,7 +332,7 @@
             if (parsed && parsed.status === "failed") return onJobFailed();
             return onJobDone(parsed);
           } catch {
-            return onJobDone({ text: String(evt.data) });
+            return onJobDone({ transcript: "", items: [] });
           }
         };
         sse.onerror = () => { };
@@ -402,8 +383,6 @@
       const data = await res.json();
       confirmMsg.textContent = `Pedido confirmado! order_id: ${data.order_id}`;
     }
-
-    btnSalvarApi.addEventListener("click", () => setApiBase(apiInput.value));
 
     btnGravar.addEventListener("click", async () => {
       resetUI();
@@ -473,7 +452,6 @@
       setStatus("Idle");
     });
 
-    setApiBase(API_BASE);
     mesaLbl.textContent = mesaId;
     setStatus("Idle");
   </script>
