@@ -1,16 +1,19 @@
-const express = require("express");
-const path = require("path");
+import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const app = express();
 
-const STATIC_DIR = path.join(__dirname, "front");
-app.use(express.static(STATIC_DIR));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-app.get("*", (req, res) => {
-    res.sendFile(path.join(STATIC_DIR, "index.html"));
+// Serve tudo que está em /public
+app.use(express.static(path.join(__dirname, "public")));
+
+// (Opcional) garantir que "/" abra o index.html
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-const port = process.env.PORT || 3000;
-app.listen(port, "0.0.0.0", () => {
-    console.log("Front on port", port);
-});
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log("web up on", PORT));
