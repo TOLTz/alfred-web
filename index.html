@@ -34,11 +34,31 @@
         radial-gradient(700px 400px at 15% 0%, rgba(239, 68, 68, .10), transparent 60%),
         var(--bg);
       color: var(--text);
+      min-height: 100vh;
     }
 
-    .wrap { max-width: 760px; margin: 0 auto; padding: 18px; }
+    /* Centraliza, mas permite ajuste fino */
+    .wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+    }
 
-    .brand { font-size: 24px; font-weight: 900; letter-spacing: .4px; margin-bottom: 10px; }
+    /* ⬆️ sobe levemente o conteúdo */
+    .container {
+      width: 100%;
+      max-width: 760px;
+      transform: translateY(-60px);
+    }
+
+    .brand {
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: .4px;
+      margin-bottom: 10px;
+    }
 
     .pill {
       display: inline-flex;
@@ -73,14 +93,14 @@
       border-radius: 50%;
       border: 0;
       background:
-        radial-gradient(circle at 30% 30%, rgba(255, 255, 255, .25), rgba(255, 255, 255, 0)),
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.25), rgba(255,255,255,0)),
         linear-gradient(180deg, var(--primary), var(--primary2));
       color: white;
       font-size: 22px;
       font-weight: 900;
       cursor: pointer;
       box-shadow: 0 20px 40px rgba(109, 40, 217, .35);
-      transition: transform .08s ease, background .15s ease, box-shadow .15s ease, filter .15s ease, opacity .15s ease;
+      transition: transform .08s ease, background .15s ease, box-shadow .15s ease;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -92,23 +112,26 @@
 
     .btn-main:active { transform: scale(.95); }
 
-    .btn-main:disabled {
-      opacity: .55;
-      cursor: not-allowed;
-      filter: grayscale(.2);
-    }
-
-    /* Estado gravando (vermelho) */
     .btn-main.recording {
       background:
-        radial-gradient(circle at 30% 30%, rgba(255, 255, 255, .2), rgba(255, 255, 255, 0)),
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.2), rgba(255,255,255,0)),
         linear-gradient(180deg, #ef4444, #dc2626);
       box-shadow: 0 20px 40px rgba(239, 68, 68, .45);
     }
 
-    .status { text-align: center; margin-top: 6px; font-size: 16px; color: var(--muted); }
+    .status {
+      text-align: center;
+      margin-top: 6px;
+      font-size: 16px;
+      color: var(--muted);
+    }
 
-    .msg { margin-top: 10px; font-size: 16px; color: var(--muted); }
+    .msg {
+      margin-top: 10px;
+      font-size: 16px;
+      color: var(--muted);
+      text-align: center;
+    }
 
     /* Modal */
     .modal {
@@ -132,17 +155,14 @@
       border-radius: 24px;
       box-shadow: var(--shadow);
       padding: 12px;
-      text-align: center;
       overflow: hidden;
     }
 
     .modal-video {
       width: 100%;
       border-radius: 18px;
-      background: #000;
       max-height: 70vh;
       object-fit: cover;
-      display: block;
     }
 
     .modal-close {
@@ -152,59 +172,53 @@
       width: 44px;
       height: 44px;
       border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, .18);
-      background: rgba(0, 0, 0, .45);
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(0,0,0,.45);
       color: #fff;
       font-size: 22px;
       font-weight: 900;
       cursor: pointer;
-      display: grid;
-      place-items: center;
-      backdrop-filter: blur(6px);
-      -webkit-tap-highlight-color: transparent;
     }
 
-    .modal-close:active { transform: scale(.98); }
-
     @media (max-width: 420px) {
+      .container { transform: translateY(-40px); }
       .title { font-size: 24px; }
       .subtitle { font-size: 17px; }
-      .btn-main { width: 170px; height: 170px; font-size: 21px; }
+      .btn-main { width: 170px; height: 170px; }
     }
   </style>
 </head>
 
 <body>
-  <!-- Modal de boas-vindas: só o vídeo + X (clique no vídeo fecha também) -->
+  <!-- Modal -->
   <div id="welcomeModal" class="modal">
     <div class="modal-content">
-      <button id="btnCloseModal" class="modal-close" aria-label="Fechar">×</button>
-      <video id="introVideo" class="modal-video" src="intro.mp4" autoplay muted loop playsinline preload="metadata"></video>
+      <button id="btnCloseModal" class="modal-close">×</button>
+      <video id="introVideo" class="modal-video" src="intro.mp4" autoplay muted loop playsinline></video>
     </div>
   </div>
 
   <div class="wrap">
-    <div class="brand">AlfredAI</div>
+    <div class="container">
+      <div class="brand">AlfredAI</div>
+      <div class="pill">Mesa <strong id="mesaLbl">—</strong></div>
 
-    <div class="pill">Mesa <strong id="mesaLbl">—</strong></div>
+      <div class="card">
+        <div class="title">Faça seu pedido por voz</div>
+        <div class="subtitle">Toque no botão e fale normalmente</div>
 
-    <div class="card">
-      <div class="title">Faça seu pedido por voz</div>
-      <div class="subtitle">Toque no botão e fale normalmente</div>
+        <div class="center">
+          <button class="btn-main" id="btnToggle">🎙️<br>Aperte pra falar</button>
+        </div>
 
-      <div class="center">
-        <button class="btn-main" id="btnToggle">🎙️<br>Aperte pra pedir</button>
+        <div class="status" id="statusLbl">Aguardando...</div>
+        <div class="msg" id="msg"></div>
       </div>
-
-      <div class="status" id="statusLbl">Aguardando...</div>
-
-      <div class="msg" id="msg"></div>
     </div>
   </div>
 
   <script>
     const API_BASE = "https://alfred-api-27ade05d8916.herokuapp.com";
-
     const mesaId = new URLSearchParams(location.search).get("mesa") || "—";
 
     const modal = document.getElementById("welcomeModal");
@@ -222,122 +236,46 @@
     let chunks = [];
     let recording = false;
 
-    function setStatus(t) { statusLbl.textContent = t; }
-
     function closeModal() {
       modal.style.display = "none";
-      try { introVideo.pause(); } catch { }
+      try { introVideo.pause(); } catch {}
     }
 
-    async function sendAudioAndGoNext(blob) {
-      setStatus("Enviando…");
-
-      const fd = new FormData();
-      fd.append("file", blob, "pedido.webm");
-
-      const res = await fetch(`${API_BASE}/audio`, { method: "POST", body: fd });
-      if (!res.ok) {
-        const t = await res.text().catch(() => "");
-        throw new Error(`Erro /audio: ${res.status} ${t}`);
-      }
-
-      const data = await res.json();
-      const jobId = data.job_id;
-
-      setStatus("Indo para conferência…");
-
-      const params = new URLSearchParams();
-      params.set("mesa", mesaId);
-      params.set("job", jobId);
-
-      // Ajuste aqui se sua segunda página tiver outro nome:
-      // ex.: confirmar.html em vez de review.html
-      location.href = `review.html?${params.toString()}`;
-    }
-
-    // Modal: fecha ao clicar no X
-    btnCloseModal.addEventListener("click", (e) => {
-      e.stopPropagation();
-      closeModal();
-    });
-
-    // Modal: fecha ao clicar no vídeo
-    introVideo.addEventListener("click", (e) => {
-      e.stopPropagation();
-      closeModal();
-    });
-
-    // clicar no fundo escuro também fecha
-    modal.addEventListener("click", (e) => {
-      if (e.target === modal) closeModal();
-    });
+    btnCloseModal.onclick = closeModal;
+    introVideo.onclick = closeModal;
+    modal.onclick = e => { if (e.target === modal) closeModal(); };
 
     btnToggle.addEventListener("click", async () => {
-      msg.textContent = "";
-
       if (!recording) {
-        setStatus("Pedindo permissão do microfone…");
-
-        let stream;
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        } catch {
-          setStatus("Permissão negada");
-          msg.textContent = "Não consegui acessar o microfone. Verifique as permissões do navegador.";
-          return;
-        }
-
-        try {
-          recorder = new MediaRecorder(stream, { mimeType: "audio/webm;codecs=opus" });
-        } catch {
-          stream.getTracks().forEach(t => t.stop());
-          setStatus("Erro");
-          msg.textContent = "Seu navegador não suporta gravação nesse formato (webm/opus).";
-          return;
-        }
-
+        statusLbl.textContent = "Gravando...";
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        recorder = new MediaRecorder(stream, { mimeType: "audio/webm;codecs=opus" });
         chunks = [];
 
-        recorder.ondataavailable = (e) => {
-          if (e.data && e.data.size > 0) chunks.push(e.data);
-        };
-
+        recorder.ondataavailable = e => e.data.size && chunks.push(e.data);
         recorder.onstop = async () => {
           stream.getTracks().forEach(t => t.stop());
+          const blob = new Blob(chunks, { type: "audio/webm;codecs=opus" });
 
-          const audioBlob = new Blob(chunks, { type: "audio/webm;codecs=opus" });
+          const fd = new FormData();
+          fd.append("file", blob, "pedido.webm");
 
-          try {
-            await sendAudioAndGoNext(audioBlob);
-          } catch (err) {
-            setStatus("Erro");
-            msg.textContent = String(err?.message || err);
-            btnToggle.disabled = false;
-          } finally {
-            btnToggle.disabled = false;
-          }
+          const res = await fetch(`${API_BASE}/audio`, { method: "POST", body: fd });
+          const { job_id } = await res.json();
+
+          location.href = `review.html?mesa=${mesaId}&job=${job_id}`;
         };
 
         recorder.start();
         recording = true;
-
         btnToggle.classList.add("recording");
         btnToggle.innerHTML = "⏹️<br>Gravando";
-        setStatus("Aguardando...");
       } else {
         recording = false;
-
         btnToggle.disabled = true;
-        btnToggle.classList.remove("recording");
-        btnToggle.innerHTML = "🎙️<br>Aperte pra falar";
-
-        setStatus("Gerando áudio…");
-        try { recorder.stop(); } catch { }
+        recorder.stop();
       }
     });
-
-    // Estado inicial
-    setStatus("Aguardando...");
   </script>
 </body>
 
