@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Alfred</title>
+
+  <style>
+    :root {
+      --bg: #0b0b10;
+      --card: #12121a;
+      --border: #242433;
+      --text: #f5f5f7;
+      --muted: #b6b6c8;
+
+      --primary: #6d28d9;
+      --primary2: #8b5cf6;
+
+      --danger: #ef4444;
+      --ok: #22c55e;
+
+      --shadow: 0 14px 34px rgba(0, 0, 0, .45);
+
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(1000px 500px at 50% -10%, rgba(109, 40, 217, .22), transparent 55%),
+        radial-gradient(700px 400px at 15% 0%, rgba(239, 68, 68, .10), transparent 60%),
+        var(--bg);
+      color: var(--text);
+    }
+
+    .wrap { max-width: 760px; margin: 0 auto; padding: 18px; }
+
+    .brand { font-size: 24px; font-weight: 900; letter-spacing: .4px; margin-bottom: 10px; }
+
+    .pill {
+      display: inline-flex;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(139, 92, 246, .35);
+      background: rgba(18, 18, 26, .65);
+      font-size: 15px;
+      margin-bottom: 12px;
+    }
+
+    .card {
+      background: rgba(18, 18, 26, .92);
+      border: 1px solid rgba(36, 36, 51, .9);
+      border-radius: 22px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+      margin-top: 14px;
+      backdrop-filter: blur(6px);
+    }
+
+    .title { font-size: 26px; font-weight: 900; margin-bottom: 8px; }
+    .subtitle { color: var(--muted); font-size: 18px; line-height: 1.35; }
+
+    .center { display: flex; justify-content: center; margin: 26px 0 14px; }
+
+    /* Botão redondo */
+    .btn-main {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      border: 0;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255, 255, 255, .25), rgba(255, 255, 255, 0)),
+        linear-gradient(180deg, var(--primary), var(--primary2));
+      color: white;
+      font-size: 22px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 20px 40px rgba(109, 40, 217, .35);
+      transition: transform .08s ease, background .15s ease, box-shadow .15s ease, filter .15s ease, opacity .15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      line-height: 1.05;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-main:active { transform: scale(.95); }
+
+    .btn-main:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+      filter: grayscale(.2);
+    }
+
+    /* Estado gravando (vermelho) */
+    .btn-main.recording {
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255, 255, 255, .2), rgba(255, 255, 255, 0)),
+        linear-gradient(180deg, #ef4444, #dc2626);
+      box-shadow: 0 20px 40px rgba(239, 68, 68, .45);
+    }
+
+    .status { text-align: center; margin-top: 6px; font-size: 16px; color: var(--muted); }
+
+    .msg { margin-top: 10px; font-size: 16px; color: var(--muted); }
+
+    /* Modal */
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 10, 20, 0.85);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 18px;
+    }
+
+    .modal-content {
+      position: relative;
+      width: 100%;
+      max-width: 460px;
+      background: rgba(18, 18, 26, .92);
+      border: 1px solid rgba(139, 92, 246, .25);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 12px;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .modal-video {
+      width: 100%;
+      border-radius: 18px;
+      background: #000;
+      max-height: 70vh;
+      object-fit: cover;
+      display: block;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, .18);
+      background: rgba(0, 0, 0, .45);
+      color: #fff;
+      font-size: 22px;
+      font-weight: 900;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      backdrop-filter: blur(6px);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .modal-close:active { transform: scale(.98); }
+
+    @media (max-width: 420px) {
+      .title { font-size: 24px; }
+      .subtitle { font-size: 17px; }
+      .btn-main { width: 170px; height: 170px; font-size: 21px; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Modal de boas-vindas: só o vídeo + X (clique no vídeo fecha também) -->
+  <div id="welcomeModal" class="modal">
+    <div class="modal-content">
+      <button id="btnCloseModal" class="modal-close" aria-label="Fechar">×</button>
+      <video id="introVideo" class="modal-video" src="intro.mp4" autoplay muted loop playsinline preload="metadata"></video>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="brand">AlfredAI</div>
+
+    <div class="pill">Mesa <strong id="mesaLbl">—</strong></div>
+
+    <div class="card">
+      <div class="title">Faça seu pedido por voz</div>
+      <div class="subtitle">Toque no botão e fale normalmente</div>
+
+      <div class="center">
+        <button class="btn-main" id="btnToggle">🎙️<br>Aperte pra pedir</button>
+      </div>
+
+      <div class="status" id="statusLbl">Aguardando...</div>
+
+      <div class="msg" id="msg"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "https://alfred-api-27ade05d8916.herokuapp.com";
+
+    const mesaId = new URLSearchParams(location.search).get("mesa") || "—";
+
+    const modal = document.getElementById("welcomeModal");
+    const introVideo = document.getElementById("introVideo");
+    const btnCloseModal = document.getElementById("btnCloseModal");
+
+    const btnToggle = document.getElementById("btnToggle");
+    const statusLbl = document.getElementById("statusLbl");
+    const msg = document.getElementById("msg");
+    const mesaLbl = document.getElementById("mesaLbl");
+
+    mesaLbl.textContent = mesaId;
+
+    let recorder = null;
+    let chunks = [];
+    let recording = false;
+
+    function setStatus(t) { statusLbl.textContent = t; }
+
+    function closeModal() {
+      modal.style.display = "none";
+      try { introVideo.pause(); } catch { }
+    }
+
+    async function sendAudioAndGoNext(blob) {
+      setStatus("Enviando…");
+
+      const fd = new FormData();
+      fd.append("file", blob, "pedido.webm");
+
+      const res = await fetch(`${API_BASE}/audio`, { method: "POST", body: fd });
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        throw new Error(`Erro /audio: ${res.status} ${t}`);
+      }
+
+      const data = await res.json();
+      const jobId = data.job_id;
+
+      setStatus("Indo para conferência…");
+
+      const params = new URLSearchParams();
+      params.set("mesa", mesaId);
+      params.set("job", jobId);
+
+      // Ajuste aqui se sua segunda página tiver outro nome:
+      // ex.: confirmar.html em vez de review.html
+      location.href = `review.html?${params.toString()}`;
+    }
+
+    // Modal: fecha ao clicar no X
+    btnCloseModal.addEventListener("click", (e) => {
+      e.stopPropagation();
+      closeModal();
+    });
+
+    // Modal: fecha ao clicar no vídeo
+    introVideo.addEventListener("click", (e) => {
+      e.stopPropagation();
+      closeModal();
+    });
+
+    // clicar no fundo escuro também fecha
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    btnToggle.addEventListener("click", async () => {
+      msg.textContent = "";
+
+      if (!recording) {
+        setStatus("Pedindo permissão do microfone…");
+
+        let stream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch {
+          setStatus("Permissão negada");
+          msg.textContent = "Não consegui acessar o microfone. Verifique as permissões do navegador.";
+          return;
+        }
+
+        try {
+          recorder = new MediaRecorder(stream, { mimeType: "audio/webm;codecs=opus" });
+        } catch {
+          stream.getTracks().forEach(t => t.stop());
+          setStatus("Erro");
+          msg.textContent = "Seu navegador não suporta gravação nesse formato (webm/opus).";
+          return;
+        }
+
+        chunks = [];
+
+        recorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) chunks.push(e.data);
+        };
+
+        recorder.onstop = async () => {
+          stream.getTracks().forEach(t => t.stop());
+
+          const audioBlob = new Blob(chunks, { type: "audio/webm;codecs=opus" });
+
+          try {
+            await sendAudioAndGoNext(audioBlob);
+          } catch (err) {
+            setStatus("Erro");
+            msg.textContent = String(err?.message || err);
+            btnToggle.disabled = false;
+          } finally {
+            btnToggle.disabled = false;
+          }
+        };
+
+        recorder.start();
+        recording = true;
+
+        btnToggle.classList.add("recording");
+        btnToggle.innerHTML = "⏹️<br>Gravando";
+        setStatus("Aguardando...");
+      } else {
+        recording = false;
+
+        btnToggle.disabled = true;
+        btnToggle.classList.remove("recording");
+        btnToggle.innerHTML = "🎙️<br>Aperte pra falar";
+
+        setStatus("Gerando áudio…");
+        try { recorder.stop(); } catch { }
+      }
+    });
+
+    // Estado inicial
+    setStatus("Aguardando...");
+  </script>
+</body>
+
+</html>

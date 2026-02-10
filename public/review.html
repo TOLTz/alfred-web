@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Alfred - Confirmar</title>
+
+    <style>
+        :root {
+            --bg: #0b0b10;
+            --card: #12121a;
+            --border: #242433;
+            --text: #f5f5f7;
+            --muted: #b6b6c8;
+
+            --primary: #6d28d9;
+            --primary2: #8b5cf6;
+
+            --danger: #ef4444;
+            --ok: #22c55e;
+
+            --shadow: 0 14px 34px rgba(0, 0, 0, .45);
+
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background:
+                radial-gradient(1000px 500px at 50% -10%, rgba(109, 40, 217, .22), transparent 55%),
+                radial-gradient(700px 400px at 15% 0%, rgba(239, 68, 68, .10), transparent 60%),
+                var(--bg);
+            color: var(--text);
+        }
+
+        .wrap {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 18px;
+        }
+
+        .brand {
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: .4px;
+            margin-bottom: 10px;
+        }
+
+        .pill {
+            display: inline-flex;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(139, 92, 246, .35);
+            background: rgba(18, 18, 26, .65);
+            font-size: 15px;
+            margin-bottom: 12px;
+        }
+
+        .card {
+            background: rgba(18, 18, 26, .92);
+            border: 1px solid rgba(36, 36, 51, .9);
+            border-radius: 22px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            margin-top: 14px;
+            backdrop-filter: blur(6px);
+        }
+
+        .title {
+            font-size: 26px;
+            font-weight: 900;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-size: 18px;
+            line-height: 1.35;
+        }
+
+        .status {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 16px;
+            color: var(--muted);
+        }
+
+        .block {
+            margin-top: 14px;
+            padding: 14px;
+            border-radius: 18px;
+            border: 1px solid rgba(139, 92, 246, .25);
+            background: rgba(12, 12, 18, .55);
+        }
+
+        .block h3 {
+            margin: 0 0 8px;
+            font-size: 16px;
+            color: var(--muted);
+            font-weight: 800;
+            letter-spacing: .2px;
+            text-transform: uppercase;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 240px;
+            margin-top: 10px;
+            background: rgba(12, 12, 18, .8);
+            border: 1px solid rgba(139, 92, 246, .35);
+            border-radius: 18px;
+            padding: 16px;
+            color: var(--text);
+            font-size: 17px;
+            line-height: 1.35;
+            resize: vertical;
+        }
+
+        /* textarea agora não-editável visualmente */
+        textarea[readonly] {
+            opacity: 1;
+            cursor: default;
+        }
+
+        .btn-confirm {
+            margin-top: 14px;
+            width: 100%;
+            height: 66px;
+            border-radius: 18px;
+            border: 0;
+            background: var(--ok);
+            color: white;
+            font-size: 20px;
+            font-weight: 900;
+            cursor: pointer;
+        }
+
+        .btn-confirm:disabled {
+            opacity: .55;
+            cursor: not-allowed;
+        }
+
+        .row-mini {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-mini {
+            flex: 1 1 160px;
+            height: 54px;
+            border-radius: 16px;
+            border: 1px solid rgba(139, 92, 246, .25);
+            background: rgba(18, 18, 26, .8);
+            color: var(--text);
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .btn-mini:disabled {
+            opacity: .55;
+            cursor: not-allowed;
+        }
+
+        .msg {
+            margin-top: 10px;
+            font-size: 16px;
+            color: var(--muted);
+        }
+
+        .success {
+            margin-top: 14px;
+            padding: 16px;
+            border-radius: 18px;
+            border: 1px solid rgba(34, 197, 94, .35);
+            background: rgba(34, 197, 94, .10);
+            line-height: 1.35;
+            font-size: 18px;
+        }
+
+        @media (max-width: 420px) {
+            .title {
+                font-size: 24px;
+            }
+
+            .subtitle {
+                font-size: 17px;
+            }
+
+            textarea {
+                min-height: 220px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <div class="brand">AlfredAI</div>
+        <div class="pill">Mesa <strong id="mesaLbl">—</strong></div>
+
+        <div class="card">
+            <div class="title">Confira seu pedido</div>
+
+            <div class="status" id="statusLbl">Carregando…</div>
+
+            <div id="content" style="display:none;">
+                <div class="block">
+                    <h3>Comanda</h3>
+                    <textarea id="comandaText" readonly
+                        placeholder="Seu pedido aparecerá aqui para conferência..."></textarea>
+                </div>
+
+                <button class="btn-confirm" id="btnConfirmar">✅ Confirmar pedido</button>
+
+                <div class="row-mini">
+                    <button class="btn-mini" id="btnRefazer">🔁 Refazer pedido</button>
+                </div>
+            </div>
+
+            <div id="successBox" class="success" style="display:none;"></div>
+            <div class="msg" id="msg"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = "https://alfred-api-27ade05d8916.herokuapp.com";
+
+        const params = new URLSearchParams(location.search);
+        const mesaId = params.get("mesa") || "—";
+        const jobId = params.get("job") || "";
+
+        const mesaLbl = document.getElementById("mesaLbl");
+        const statusLbl = document.getElementById("statusLbl");
+        const msg = document.getElementById("msg");
+
+        const content = document.getElementById("content");
+        const comandaText = document.getElementById("comandaText");
+        const btnConfirmar = document.getElementById("btnConfirmar");
+        const btnRefazer = document.getElementById("btnRefazer");
+
+        const successBox = document.getElementById("successBox");
+
+        mesaLbl.textContent = mesaId;
+
+        let jobResult = null;
+        let sse = null;
+        let pollingTimer = null;
+
+        function setStatus(t) { statusLbl.textContent = t; }
+
+        function cleanupWaiters() {
+            if (sse) { try { sse.close(); } catch { } sse = null; }
+            if (pollingTimer) { clearInterval(pollingTimer); pollingTimer = null; }
+        }
+
+        function formatComanda(r) {
+            const lines = [];
+            const mesaLine = mesaId && mesaId !== "—" ? `Mesa ${mesaId}` : "Mesa —";
+
+            lines.push(`COMANDA - ${mesaLine}`);
+            lines.push("");
+
+            const items = Array.isArray(r?.items) ? r.items : [];
+            if (items.length) {
+                lines.push("Itens:");
+                for (const i of items) {
+                    const qty = Number(i?.quantity ?? 1);
+                    const name = i?.name || i?.item_id || "Item";
+                    lines.push(`- ${qty}x ${name}`);
+                }
+            } else {
+                lines.push("Itens:");
+                lines.push("- (nenhum item identificado, chame um garçom)");
+            }
+
+            const transcript = (r?.transcript || "").trim();
+            if (transcript) {
+                lines.push("");
+                lines.push("Você falou:");
+                lines.push(transcript);
+            }
+
+            const obs = (r?.observations || "").trim();
+            lines.push("");
+            lines.push("Observações:");
+            lines.push(obs ? obs : "(sem observações)");
+
+            return lines.join("\n");
+        }
+
+        function showResult(result) {
+            jobResult = result;
+
+            comandaText.value = formatComanda(result);
+
+            content.style.display = "block";
+            setStatus("Pronto! Confirme ✅");
+            cleanupWaiters();
+        }
+
+        function showFailed() {
+            setStatus("Falhou");
+            msg.textContent = "Falha ao processar. Você pode refazer o pedido.";
+            cleanupWaiters();
+        }
+
+        function startSSE(id) {
+            try {
+                sse = new EventSource(`${API_BASE}/events/${id}`);
+                sse.onmessage = (evt) => {
+                    if (!evt.data) return;
+                    try {
+                        const parsed = JSON.parse(evt.data);
+                        if (parsed && parsed.status === "failed") return showFailed();
+                        return showResult(parsed);
+                    } catch {
+                        return showFailed();
+                    }
+                };
+                sse.onerror = () => { };
+            } catch { }
+        }
+
+        function startPollingFallback(id) {
+            pollingTimer = setInterval(async () => {
+                if (!id || jobResult) return;
+                try {
+                    const res = await fetch(`${API_BASE}/jobs/${id}`);
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    if (data.status === "finished") {
+                        showResult(data.result);
+                    } else if (data.status === "failed") {
+                        showFailed();
+                    }
+                } catch { }
+            }, 1200);
+        }
+
+        async function confirmOrder() {
+            if (!jobId || !jobResult) return;
+
+            btnConfirmar.disabled = true;
+            msg.textContent = "Confirmando…";
+
+            const payload = {
+                job_id: jobId,
+                mesa_id: mesaId,
+                order: jobResult,
+                customer_text: comandaText.value || ""
+            };
+
+            const res = await fetch(`${API_BASE}/orders/confirm`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                const t = await res.text().catch(() => "");
+                msg.textContent = `Erro ao confirmar: ${res.status} ${t}`;
+                btnConfirmar.disabled = false;
+                return;
+            }
+
+            // Tela final
+            content.style.display = "none";
+            setStatus("✅ Pedido confirmado");
+
+            successBox.style.display = "block";
+            successBox.innerHTML = `
+        <strong>Pedido encaminhado para cozinha ✅</strong><br><br>
+        Muito obrigado pela preferência!!
+      `;
+
+            msg.textContent = "";
+        }
+
+        btnConfirmar.addEventListener("click", confirmOrder);
+
+        btnRefazer.addEventListener("click", () => {
+            const backUrl = new URL("index.html", location.href);
+            backUrl.searchParams.set("mesa", mesaId);
+            location.href = backUrl.toString();
+        });
+
+        // Boot
+        if (!jobId) {
+            setStatus("Faltou o job na URL");
+            msg.textContent = "Abra pela tela inicial para gravar o pedido.";
+        } else {
+            setStatus("Processando pedido…");
+            startSSE(jobId);
+            startPollingFallback(jobId);
+        }
+    </script>
+</body>
+
+</html>
