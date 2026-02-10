@@ -18,7 +18,6 @@
       --primary2: #8b5cf6;
 
       --danger: #ef4444;
-      --ok: #22c55e;
 
       --shadow: 0 14px 34px rgba(0, 0, 0, .45);
 
@@ -37,7 +36,6 @@
       min-height: 100vh;
     }
 
-    /* Centraliza, mas permite ajuste fino */
     .wrap {
       min-height: 100vh;
       display: flex;
@@ -46,7 +44,6 @@
       padding: 18px;
     }
 
-    /* ⬆️ sobe levemente o conteúdo */
     .container {
       width: 100%;
       max-width: 760px;
@@ -86,7 +83,6 @@
 
     .center { display: flex; justify-content: center; margin: 26px 0 14px; }
 
-    /* Botão redondo */
     .btn-main {
       width: 180px;
       height: 180px;
@@ -100,7 +96,7 @@
       font-weight: 900;
       cursor: pointer;
       box-shadow: 0 20px 40px rgba(109, 40, 217, .35);
-      transition: transform .08s ease, background .15s ease, box-shadow .15s ease;
+      transition: transform .08s ease, background .15s ease, box-shadow .15s ease, opacity .15s ease, filter .15s ease;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -111,6 +107,12 @@
     }
 
     .btn-main:active { transform: scale(.95); }
+
+    .btn-main:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+      filter: grayscale(.2);
+    }
 
     .btn-main.recording {
       background:
@@ -161,8 +163,10 @@
     .modal-video {
       width: 100%;
       border-radius: 18px;
+      background: #000;
       max-height: 70vh;
       object-fit: cover;
+      display: block;
     }
 
     .modal-close {
@@ -178,29 +182,33 @@
       font-size: 22px;
       font-weight: 900;
       cursor: pointer;
+      display: grid;
+      place-items: center;
+      -webkit-tap-highlight-color: transparent;
     }
 
     @media (max-width: 420px) {
       .container { transform: translateY(-40px); }
       .title { font-size: 24px; }
       .subtitle { font-size: 17px; }
-      .btn-main { width: 170px; height: 170px; }
+      .btn-main { width: 170px; height: 170px; font-size: 21px; }
     }
   </style>
 </head>
 
 <body>
-  <!-- Modal -->
+  <!-- Modal: vídeo + X -->
   <div id="welcomeModal" class="modal">
     <div class="modal-content">
-      <button id="btnCloseModal" class="modal-close">×</button>
-      <video id="introVideo" class="modal-video" src="intro.mp4" autoplay muted loop playsinline></video>
+      <button id="btnCloseModal" class="modal-close" aria-label="Fechar">×</button>
+      <video id="introVideo" class="modal-video" src="intro.mp4" autoplay muted loop playsinline preload="metadata"></video>
     </div>
   </div>
 
   <div class="wrap">
     <div class="container">
       <div class="brand">AlfredAI</div>
+
       <div class="pill">Mesa <strong id="mesaLbl">—</strong></div>
 
       <div class="card">
@@ -208,7 +216,7 @@
         <div class="subtitle">Toque no botão e fale normalmente</div>
 
         <div class="center">
-          <button class="btn-main" id="btnToggle">🎙️<br>Aperte pra falar</button>
+          <button class="btn-main" id="btnToggle">🎙️<br>Aperte pra pedir</button>
         </div>
 
         <div class="status" id="statusLbl">Aguardando...</div>
@@ -219,63 +227,197 @@
 
   <script>
     const API_BASE = "https://alfred-api-27ade05d8916.herokuapp.com";
+
     const mesaId = new URLSearchParams(location.search).get("mesa") || "—";
 
     const modal = document.getElementById("welcomeModal");
     const introVideo = document.getElementById("introVideo");
     const btnCloseModal = document.getElementById("btnCloseModal");
 
+    const mesaLbl = document.getElementById("mesaLbl");
     const btnToggle = document.getElementById("btnToggle");
     const statusLbl = document.getElementById("statusLbl");
     const msg = document.getElementById("msg");
-    const mesaLbl = document.getElementById("mesaLbl");
 
     mesaLbl.textContent = mesaId;
 
+    // Estado robusto (evita “travou e não para”)
+    let state = "idle"; // idle | recording | stopping | uploading
+    let stream = null;
     let recorder = null;
     let chunks = [];
-    let recording = false;
+
+    function setStatus(t) { statusLbl.textContent = t; }
+    function setMsg(t) { msg.textContent = t || ""; }
+
+    function setButtonIdle() {
+      btnToggle.disabled = false;
+      btnToggle.classList.remove("recording");
+      btnToggle.innerHTML = "🎙️<br>Aperte pra falar";
+    }
+
+    function setButtonRecording() {
+      btnToggle.disabled = false;
+      btnToggle.classList.add("recording");
+      btnToggle.innerHTML = "⏹️<br>Gravando";
+    }
 
     function closeModal() {
       modal.style.display = "none";
-      try { introVideo.pause(); } catch {}
+      try { introVideo.pause(); } catch { }
     }
 
-    btnCloseModal.onclick = closeModal;
-    introVideo.onclick = closeModal;
-    modal.onclick = e => { if (e.target === modal) closeModal(); };
+    btnCloseModal.addEventListener("click", (e) => { e.stopPropagation(); closeModal(); });
+    introVideo.addEventListener("click", (e) => { e.stopPropagation(); closeModal(); });
+    modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
 
-    btnToggle.addEventListener("click", async () => {
-      if (!recording) {
-        statusLbl.textContent = "Gravando...";
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    async function startRecording() {
+      setMsg("");
+      setStatus("Pedindo permissão do microfone…");
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (err) {
+        state = "idle";
+        setButtonIdle();
+        setStatus("Permissão negada");
+        setMsg("Não consegui acessar o microfone. Verifique as permissões do navegador.");
+        return;
+      }
+
+      // Alguns navegadores rejeitam mimeType; deixamos fallback
+      try {
         recorder = new MediaRecorder(stream, { mimeType: "audio/webm;codecs=opus" });
-        chunks = [];
-
-        recorder.ondataavailable = e => e.data.size && chunks.push(e.data);
-        recorder.onstop = async () => {
+      } catch {
+        try {
+          recorder = new MediaRecorder(stream);
+        } catch {
           stream.getTracks().forEach(t => t.stop());
-          const blob = new Blob(chunks, { type: "audio/webm;codecs=opus" });
+          stream = null;
+          state = "idle";
+          setButtonIdle();
+          setStatus("Erro");
+          setMsg("Seu navegador não suporta gravação de áudio aqui.");
+          return;
+        }
+      }
 
+      chunks = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunks.push(e.data);
+      };
+
+      recorder.onerror = () => {
+        state = "idle";
+        setButtonIdle();
+        setStatus("Erro");
+        setMsg("Erro ao gravar áudio. Tente novamente.");
+      };
+
+      recorder.onstop = async () => {
+        // encerra stream
+        try { stream && stream.getTracks().forEach(t => t.stop()); } catch { }
+        stream = null;
+
+        const blob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
+
+        state = "uploading";
+        btnToggle.disabled = true;
+        btnToggle.classList.remove("recording");
+        btnToggle.innerHTML = "⏳<br>Enviando";
+        setStatus("Enviando…");
+
+        try {
           const fd = new FormData();
           fd.append("file", blob, "pedido.webm");
 
           const res = await fetch(`${API_BASE}/audio`, { method: "POST", body: fd });
-          const { job_id } = await res.json();
+          if (!res.ok) {
+            const t = await res.text().catch(() => "");
+            throw new Error(`Erro /audio: ${res.status} ${t}`);
+          }
 
-          location.href = `review.html?mesa=${mesaId}&job=${job_id}`;
-        };
+          const data = await res.json();
+          const jobId = data.job_id;
 
+          setStatus("Indo para conferência…");
+
+          const p = new URLSearchParams();
+          p.set("mesa", mesaId);
+          p.set("job", jobId);
+          location.href = `review.html?${p.toString()}`;
+        } catch (err) {
+          state = "idle";
+          setButtonIdle();
+          setStatus("Erro");
+          setMsg(String(err?.message || err));
+        }
+      };
+
+      try {
         recorder.start();
-        recording = true;
-        btnToggle.classList.add("recording");
-        btnToggle.innerHTML = "⏹️<br>Gravando";
-      } else {
-        recording = false;
-        btnToggle.disabled = true;
+      } catch (err) {
+        try { stream && stream.getTracks().forEach(t => t.stop()); } catch { }
+        stream = null;
+        state = "idle";
+        setButtonIdle();
+        setStatus("Erro");
+        setMsg("Não consegui iniciar a gravação.");
+        return;
+      }
+
+      state = "recording";
+      setButtonRecording();
+      setStatus("Gravando...");
+    }
+
+    function stopRecording() {
+      if (!recorder) {
+        state = "idle";
+        setButtonIdle();
+        setStatus("Aguardando...");
+        return;
+      }
+
+      state = "stopping";
+      btnToggle.disabled = true;
+      setStatus("Gerando áudio…");
+
+      try {
         recorder.stop();
+      } catch {
+        // fallback: se stop falhar, tenta encerrar stream e voltar ao idle
+        try { stream && stream.getTracks().forEach(t => t.stop()); } catch { }
+        stream = null;
+        recorder = null;
+        state = "idle";
+        setButtonIdle();
+        setStatus("Aguardando...");
+      }
+    }
+
+    btnToggle.addEventListener("click", async () => {
+      // Se estiver enviando, ignora clique
+      if (state === "uploading") return;
+
+      // Se estiver parando, ignora clique
+      if (state === "stopping") return;
+
+      if (state === "idle") {
+        await startRecording();
+        return;
+      }
+
+      if (state === "recording") {
+        stopRecording();
+        return;
       }
     });
+
+    // Estado inicial
+    setButtonIdle();
+    setStatus("Aguardando...");
   </script>
 </body>
 
