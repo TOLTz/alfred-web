@@ -108,12 +108,6 @@
             text-transform: uppercase;
         }
 
-        .transcript {
-            white-space: pre-wrap;
-            line-height: 1.35;
-            font-size: 18px;
-        }
-
         textarea {
             width: 100%;
             min-height: 240px;
@@ -126,6 +120,12 @@
             font-size: 17px;
             line-height: 1.35;
             resize: vertical;
+        }
+
+        /* textarea agora não-editável visualmente */
+        textarea[readonly] {
+            opacity: 1;
+            cursor: default;
         }
 
         .btn-confirm {
@@ -199,10 +199,6 @@
                 min-height: 220px;
                 font-size: 16px;
             }
-
-            .transcript {
-                font-size: 17px;
-            }
         }
     </style>
 </head>
@@ -214,25 +210,19 @@
 
         <div class="card">
             <div class="title">Confira seu pedido</div>
-            <div class="subtitle">Veja a transcrição, ajuste a comanda se quiser e confirme para enviar à cozinha.</div>
 
             <div class="status" id="statusLbl">Carregando…</div>
 
             <div id="content" style="display:none;">
                 <div class="block">
-                    <h3>Transcrição</h3>
-                    <div class="transcript" id="transcriptLbl">—</div>
-                </div>
-
-                <div class="block">
-                    <h3>Comanda (editável)</h3>
-                    <textarea id="comandaText" placeholder="Seu pedido aparecerá aqui para conferência..."></textarea>
+                    <h3>Comanda</h3>
+                    <textarea id="comandaText" readonly
+                        placeholder="Seu pedido aparecerá aqui para conferência..."></textarea>
                 </div>
 
                 <button class="btn-confirm" id="btnConfirmar">✅ Confirmar pedido</button>
 
                 <div class="row-mini">
-                    <button class="btn-mini" id="btnVoltar">⬅️ Voltar</button>
                     <button class="btn-mini" id="btnRefazer">🔁 Refazer pedido</button>
                 </div>
             </div>
@@ -254,11 +244,8 @@
         const msg = document.getElementById("msg");
 
         const content = document.getElementById("content");
-        const transcriptLbl = document.getElementById("transcriptLbl");
         const comandaText = document.getElementById("comandaText");
         const btnConfirmar = document.getElementById("btnConfirmar");
-
-        const btnVoltar = document.getElementById("btnVoltar");
         const btnRefazer = document.getElementById("btnRefazer");
 
         const successBox = document.getElementById("successBox");
@@ -314,19 +301,16 @@
         function showResult(result) {
             jobResult = result;
 
-            const transcript = (result?.transcript || "").trim() || "—";
-            transcriptLbl.textContent = transcript;
-
             comandaText.value = formatComanda(result);
 
             content.style.display = "block";
-            setStatus("Pronto! Ajuste se quiser e confirme ✅");
+            setStatus("Pronto! Confirme ✅");
             cleanupWaiters();
         }
 
         function showFailed() {
             setStatus("Falhou");
-            msg.textContent = "Falha ao processar. Você pode voltar e tentar novamente.";
+            msg.textContent = "Falha ao processar. Você pode refazer o pedido.";
             cleanupWaiters();
         }
 
@@ -402,14 +386,7 @@
             msg.textContent = "";
         }
 
-        // Botões extras
         btnConfirmar.addEventListener("click", confirmOrder);
-
-        btnVoltar.addEventListener("click", () => {
-            const backUrl = new URL("index.html", location.href);
-            backUrl.searchParams.set("mesa", mesaId);
-            location.href = backUrl.toString();
-        });
 
         btnRefazer.addEventListener("click", () => {
             const backUrl = new URL("index.html", location.href);

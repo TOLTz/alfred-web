@@ -66,44 +66,47 @@
 
     .center { display: flex; justify-content: center; margin: 26px 0 14px; }
 
+    /* Botão redondo */
     .btn-main {
-      width: 100%;
-      max-width: 460px;
-      height: 100px;
-      border-radius: 28px;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
       border: 0;
       background:
-        linear-gradient(180deg, rgba(255, 255, 255, .18), rgba(255, 255, 255, 0)),
-        linear-gradient(90deg, var(--primary), var(--primary2));
+        radial-gradient(circle at 30% 30%, rgba(255, 255, 255, .25), rgba(255, 255, 255, 0)),
+        linear-gradient(180deg, var(--primary), var(--primary2));
       color: white;
-      font-size: 24px;
+      font-size: 22px;
       font-weight: 900;
       cursor: pointer;
-      box-shadow: 0 18px 34px rgba(109, 40, 217, .28);
-      transition: transform .08s ease, filter .1s ease;
+      box-shadow: 0 20px 40px rgba(109, 40, 217, .35);
+      transition: transform .08s ease, background .15s ease, box-shadow .15s ease, filter .15s ease, opacity .15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      line-height: 1.05;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    .btn-main:active { transform: scale(.97); }
-    .btn-main:disabled { opacity: .55; cursor: not-allowed; filter: grayscale(.2); }
+    .btn-main:active { transform: scale(.95); }
+
+    .btn-main:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+      filter: grayscale(.2);
+    }
+
+    /* Estado gravando (vermelho) */
+    .btn-main.recording {
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255, 255, 255, .2), rgba(255, 255, 255, 0)),
+        linear-gradient(180deg, #ef4444, #dc2626);
+      box-shadow: 0 20px 40px rgba(239, 68, 68, .45);
+    }
 
     .status { text-align: center; margin-top: 6px; font-size: 16px; color: var(--muted); }
-
-    audio { width: 100%; margin-top: 14px; border-radius: 14px; outline: none; }
-
-    .row-mini { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
-
-    .btn-mini {
-      flex: 1 1 160px;
-      height: 54px;
-      border-radius: 16px;
-      border: 1px solid rgba(139, 92, 246, .25);
-      background: rgba(18, 18, 26, .8);
-      color: var(--text);
-      font-size: 16px;
-      font-weight: 800;
-      cursor: pointer;
-    }
-    .btn-mini:disabled { opacity: .55; cursor: not-allowed; }
 
     .msg { margin-top: 10px; font-size: 16px; color: var(--muted); }
 
@@ -121,84 +124,79 @@
     }
 
     .modal-content {
+      position: relative;
       width: 100%;
       max-width: 460px;
       background: rgba(18, 18, 26, .92);
       border: 1px solid rgba(139, 92, 246, .25);
       border-radius: 24px;
       box-shadow: var(--shadow);
-      padding: 18px;
+      padding: 12px;
       text-align: center;
+      overflow: hidden;
     }
 
     .modal-video {
       width: 100%;
       border-radius: 18px;
-      margin-bottom: 14px;
       background: #000;
-      max-height: 52vh;
+      max-height: 70vh;
       object-fit: cover;
+      display: block;
     }
 
-    .modal-title { font-size: 26px; font-weight: 950; margin: 10px 0 8px; }
-    .modal-text { font-size: 18px; color: var(--muted); line-height: 1.35; margin: 0 0 14px; }
-
-    .modal-btn {
-      width: 100%;
-      height: 66px;
-      border-radius: 18px;
-      border: none;
-      background: linear-gradient(90deg, var(--primary), var(--primary2));
-      color: white;
-      font-size: 20px;
-      font-weight: 950;
+    .modal-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, .18);
+      background: rgba(0, 0, 0, .45);
+      color: #fff;
+      font-size: 22px;
+      font-weight: 900;
       cursor: pointer;
+      display: grid;
+      place-items: center;
+      backdrop-filter: blur(6px);
+      -webkit-tap-highlight-color: transparent;
     }
+
+    .modal-close:active { transform: scale(.98); }
 
     @media (max-width: 420px) {
-      .btn-main { height: 92px; font-size: 22px; border-radius: 24px; }
       .title { font-size: 24px; }
-      .subtitle, .modal-text { font-size: 17px; }
+      .subtitle { font-size: 17px; }
+      .btn-main { width: 170px; height: 170px; font-size: 21px; }
     }
   </style>
 </head>
 
 <body>
-  <!-- Modal de boas-vindas com vídeo -->
+  <!-- Modal de boas-vindas: só o vídeo + X (clique no vídeo fecha também) -->
   <div id="welcomeModal" class="modal">
     <div class="modal-content">
-      <video class="modal-video" src="intro.mp4" autoplay muted loop playsinline preload="metadata"></video>
-
-      <div class="modal-title">Seja bem-vindo ao Alfred.AI</div>
-      <div class="modal-text">
-        Serei seu garçom digital.<br>
-        Aperte o botão e faça seu primeiro pedido.
-      </div>
-
-      <button id="btnStart" class="modal-btn">Fazer meu primeiro pedido</button>
+      <button id="btnCloseModal" class="modal-close" aria-label="Fechar">×</button>
+      <video id="introVideo" class="modal-video" src="intro.mp4" autoplay muted loop playsinline preload="metadata"></video>
     </div>
   </div>
 
   <div class="wrap">
     <div class="brand">AlfredAI</div>
+
     <div class="pill">Mesa <strong id="mesaLbl">—</strong></div>
 
     <div class="card">
       <div class="title">Faça seu pedido por voz</div>
-      <div class="subtitle">Toque no botão e fale normalmente.</div>
+      <div class="subtitle">Toque no botão e fale normalmente</div>
 
       <div class="center">
-        <button class="btn-main" id="btnToggle">🎙️ Aperte para falar</button>
+        <button class="btn-main" id="btnToggle">🎙️<br>Aperte pra falar</button>
       </div>
 
-      <div class="status" id="statusLbl">Aguardando…</div>
-
-      <audio id="audioPreview" controls style="display:none;"></audio>
-
-      <div class="row-mini">
-        <button class="btn-mini" id="btnBaixar" disabled>⬇️ Baixar áudio</button>
-        <button class="btn-mini" id="btnRefazer" disabled>🔁 Refazer</button>
-      </div>
+      <div class="status" id="statusLbl">Aguardando...</div>
 
       <div class="msg" id="msg"></div>
     </div>
@@ -210,35 +208,25 @@
     const mesaId = new URLSearchParams(location.search).get("mesa") || "—";
 
     const modal = document.getElementById("welcomeModal");
-    const btnStart = document.getElementById("btnStart");
+    const introVideo = document.getElementById("introVideo");
+    const btnCloseModal = document.getElementById("btnCloseModal");
 
     const btnToggle = document.getElementById("btnToggle");
     const statusLbl = document.getElementById("statusLbl");
     const msg = document.getElementById("msg");
     const mesaLbl = document.getElementById("mesaLbl");
 
-    const audioPreview = document.getElementById("audioPreview");
-    const btnBaixar = document.getElementById("btnBaixar");
-    const btnRefazer = document.getElementById("btnRefazer");
-
     mesaLbl.textContent = mesaId;
 
     let recorder = null;
     let chunks = [];
     let recording = false;
-    let audioBlob = null;
 
     function setStatus(t) { statusLbl.textContent = t; }
 
-    function resetUI(keepAudioPreview = false) {
-      msg.textContent = "";
-      if (!keepAudioPreview) {
-        audioBlob = null;
-        audioPreview.src = "";
-        audioPreview.style.display = "none";
-        btnBaixar.disabled = true;
-      }
-      btnRefazer.disabled = true;
+    function closeModal() {
+      modal.style.display = "none";
+      try { introVideo.pause(); } catch { }
     }
 
     async function sendAudioAndGoNext(blob) {
@@ -258,27 +246,56 @@
 
       setStatus("Indo para conferência…");
 
-      // Vai para a próxima página com mesa + job
       const params = new URLSearchParams();
       params.set("mesa", mesaId);
       params.set("job", jobId);
+
+      // Ajuste aqui se sua segunda página tiver outro nome:
+      // ex.: confirmar.html em vez de review.html
       location.href = `review.html?${params.toString()}`;
     }
 
-    // Modal: fecha ao clicar
-    btnStart.addEventListener("click", () => {
-      modal.style.display = "none";
+    // Modal: fecha ao clicar no X
+    btnCloseModal.addEventListener("click", (e) => {
+      e.stopPropagation();
+      closeModal();
+    });
+
+    // Modal: fecha ao clicar no vídeo
+    introVideo.addEventListener("click", (e) => {
+      e.stopPropagation();
+      closeModal();
+    });
+
+    // clicar no fundo escuro também fecha
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) closeModal();
     });
 
     btnToggle.addEventListener("click", async () => {
       msg.textContent = "";
 
       if (!recording) {
-        resetUI(false);
         setStatus("Pedindo permissão do microfone…");
 
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        recorder = new MediaRecorder(stream, { mimeType: "audio/webm;codecs=opus" });
+        let stream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch {
+          setStatus("Permissão negada");
+          msg.textContent = "Não consegui acessar o microfone. Verifique as permissões do navegador.";
+          return;
+        }
+
+        try {
+          recorder = new MediaRecorder(stream, { mimeType: "audio/webm;codecs=opus" });
+        } catch {
+          stream.getTracks().forEach(t => t.stop());
+          setStatus("Erro");
+          msg.textContent = "Seu navegador não suporta gravação nesse formato (webm/opus).";
+          return;
+        }
+
         chunks = [];
 
         recorder.ondataavailable = (e) => {
@@ -288,14 +305,7 @@
         recorder.onstop = async () => {
           stream.getTracks().forEach(t => t.stop());
 
-          audioBlob = new Blob(chunks, { type: "audio/webm;codecs=opus" });
-
-          const url = URL.createObjectURL(audioBlob);
-          audioPreview.src = url;
-          audioPreview.style.display = "block";
-
-          btnBaixar.disabled = false;
-          btnRefazer.disabled = false;
+          const audioBlob = new Blob(chunks, { type: "audio/webm;codecs=opus" });
 
           try {
             await sendAudioAndGoNext(audioBlob);
@@ -310,38 +320,24 @@
 
         recorder.start();
         recording = true;
-        btnToggle.textContent = "⏹️ Toque para parar";
-        setStatus("Gravando…");
+
+        btnToggle.classList.add("recording");
+        btnToggle.innerHTML = "⏹️<br>Gravando";
+        setStatus("Aguardando...");
       } else {
         recording = false;
+
         btnToggle.disabled = true;
-        btnToggle.textContent = "🎙️ Aperte para falar";
+        btnToggle.classList.remove("recording");
+        btnToggle.innerHTML = "🎙️<br>Aperte pra falar";
+
         setStatus("Gerando áudio…");
         try { recorder.stop(); } catch { }
       }
     });
 
-    btnBaixar.addEventListener("click", () => {
-      if (!audioBlob) return;
-      const url = URL.createObjectURL(audioBlob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `pedido_mesa_${mesaId}.webm`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-    });
-
-    btnRefazer.addEventListener("click", () => {
-      recording = false;
-      btnToggle.disabled = false;
-      btnToggle.textContent = "🎙️ Aperte para falar";
-      setStatus("Aguardando…");
-      resetUI(false);
-    });
-
-    setStatus("Aguardando…");
+    // Estado inicial
+    setStatus("Aguardando...");
   </script>
 </body>
 
